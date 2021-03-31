@@ -1,46 +1,63 @@
 import pygame, sys, random
 
 
-def ball_animation():
-    global ball_speed_x, ball_speed_y
+class Ball:
+    def __init__(self, ball_speed_x, ball_speed_y):
+        self.ball = pygame.Rect(screen_width / 2 - 15, screen_height / 2 - 15, 30, 30)
+        self.vx = ball_speed_x
+        self.vy = ball_speed_y
 
-    ball.x += ball_speed_x
-    ball.y += ball_speed_y
+    def animate(self, screen_height, screen_width, player, opponent):
+        self.ball.x += self.vx
+        self.ball.y += self.vy
 
-    if ball.top <= 0 or ball.bottom >= screen_height:
-        ball_speed_y *= -1
-    if ball.left <= 0 or ball.right >= screen_width:
-        ball_restart()
+        if self.ball.top <= 0 or self.ball.bottom >= screen_height:
+            self.vy *= -1
+        if self.ball.left <= 0 or self.ball.right >= screen_width:
+            self.restart()
 
-    if ball.colliderect(player) or ball.colliderect(opponent):
-        ball_speed_x *= -1
+        if self.ball.colliderect(player.player) or self.ball.colliderect(opponent.opponent):
+            self.vx *= -1
 
-
-def player_animation():
-    player.y += player_speed
-    if player.top <= 0:
-        player.top = 0
-    if player.bottom >= screen_height:
-        player.bottom = screen_height
-
-
-def opponent_AI():
-    if opponent.centery > ball.centery:
-        opponent.top -= opponent_speed
-    if opponent.centery < ball.centery:
-        opponent.top += opponent_speed
-
-    if opponent.top <= 0:
-        opponent.top = 0
-    if opponent.bottom >= screen_height:
-        opponent.bottom = screen_height
+    def restart(self):
+        self.ball.center = (screen_width / 2, screen_height / 2)
+        self.vx *= random.choice((1, -1))
+        self.vy *= random.choice((1, -1))
 
 
-def ball_restart():
-    global ball_speed_x, ball_speed_y
-    ball.center = (screen_width / 2, screen_height / 2)
-    ball_speed_y *= random.choice((1, -1))
-    ball_speed_x *= random.choice((1, -1))
+class Player:
+    def __init__(self, speed):
+        self.player = pygame.Rect(screen_width - 20, screen_height / 2 - 70, 10, 140)
+        self.speed = speed
+
+    def animate(self, screen_width, screen_height):
+
+        self.player.y += self.speed
+        if self.player.top <= 0:
+            self.player.top = 0
+        if self.player.bottom >= screen_width:
+            self.player.top = 0
+        if self.player.bottom >= screen_height:
+            self.player.bottom = screen_height
+
+
+class Opponent():
+
+    def __init__(self, speed):
+        self.opponent = pygame.Rect(10, screen_height / 2 - 70, 10, 140)
+        self.speed = speed
+
+    def opponent_AI(self, ball, screen_height):
+
+        if self.opponent.centery > ball.ball.centery:
+            self.opponent.top -= self.speed
+        if self.opponent.centery < ball.ball.centery:
+            self.opponent.top += self.speed
+
+        if self.opponent.top <= 0:
+            self.opponent.top = 0
+        if self.opponent.bottom >= screen_height:
+            self.opponent.bottom = screen_height
 
 
 # General setup
@@ -54,17 +71,12 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Pong')
 
 # Game rectangles
-ball = pygame.Rect(screen_width / 2 - 15, screen_height / 2 - 15, 30, 30)
-player = pygame.Rect(screen_width - 20, screen_height / 2 - 70, 10, 140)
-opponent = pygame.Rect(10, screen_height / 2 - 70, 10, 140)
+ball = Ball(7 * random.choice((1, -1)), 7 * random.choice((1, -1)))
+player = Player(0)
+opponent = Opponent(8)
 
 bg_color = pygame.Color('grey12')
 light_gray = (200, 200, 200)
-
-ball_speed_x = 7 * random.choice((1, -1))
-ball_speed_y = 7 * random.choice((1, -1))
-player_speed = 0
-opponent_speed = 8
 
 while True:
     # Inputs
@@ -75,25 +87,26 @@ while True:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_DOWN:
-                player_speed += 7
+                player.speed += 7
             if event.key == pygame.K_UP:
-                player_speed -= 7
+                player.speed -= 7
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_DOWN:
-                player_speed -= 7
+                player.speed -= 7
             if event.key == pygame.K_UP:
-                player_speed += 7
+                player.speed += 7
 
-    ball_animation()
-    player_animation()
-    opponent_AI()
+    ball.animate(screen_height, screen_width, player, opponent)
+    player.animate(screen_width, screen_height)
+    opponent.opponent_AI(ball,screen_height)
+
 
     # Visuals
     screen.fill(bg_color)
-    pygame.draw.rect(screen, light_gray, player)
-    pygame.draw.rect(screen, light_gray, opponent)
-    pygame.draw.ellipse(screen, light_gray, ball)
+    pygame.draw.rect(screen, light_gray, player.player)
+    pygame.draw.rect(screen, light_gray, opponent.opponent)
+    pygame.draw.ellipse(screen, light_gray, ball.ball)
     pygame.draw.aaline(screen, light_gray, (screen_width / 2, 0), (screen_width / 2, screen_height))
 
     # Updating the window
